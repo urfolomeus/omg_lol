@@ -52,24 +52,10 @@ Before first use, make the CLI script executable:
 
 ### Blog Commands
 
-Display a timeline of blog post counts by day:
-
-   ```
-   ./bin/omglol blog timeline
-   ```
-
-This command shows the number of posts published each day since the first post, including days with no posts.
-
-Check your blogging status:
-
-   ```
-   ./bin/omglol blog status
-   ```
-
-This command shows statistics about your blogging frequency, including:
-- Total number of posts published
-- Number of days since your first post
-- The difference between posts and days (positive means you're ahead, negative means you're behind)
+| command | description |
+|:--|:---|
+| <nowrap>`./bin/omglol blog status`</nowrap> | Check your blogging status: Total = number of posts published, Days = number of days since your first post, Delta = delta between posts and days (positive means you're ahead, negative means you're behind) |
+| <nowrap>`./bin/omglol blog timeline`</nowrap> | Display a timeline of blog post counts by day since the first post, highlighting days with no posts. |
 
 ## Development
 
