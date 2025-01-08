@@ -1,4 +1,4 @@
-import fetch, { FetchError } from 'node-fetch';
+import fetch from 'node-fetch';
 import { outputDecorator } from './utils/outputDecorator.js';
 
 interface Author {
