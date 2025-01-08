@@ -18,7 +18,7 @@ interface BlogFeed {
   items: BlogPost[];
 }
 
-export async function countPosts(url?: string): Promise<number> {
+export async function fetchJSON(url?: string): Promise<BlogFeed> {
   const feedUrl = url || process.env.BLOG_FEED_URL;
   if (!feedUrl) {
     throw new Error('Blog feed URL not provided');
@@ -33,7 +33,7 @@ export async function countPosts(url?: string): Promise<number> {
     if (!data.items) {
       throw new Error('Failed to fetch blog posts: Invalid response format');
     }
-    return data.items.length;
+    return data;
   } catch (error) {
     if (error instanceof FetchError) {
       throw new Error('Failed to fetch blog posts: Network error');
@@ -45,10 +45,15 @@ export async function countPosts(url?: string): Promise<number> {
   }
 }
 
+export function countPosts(feed: BlogFeed): number {
+  return feed.items.length;
+}
+
 // Main function that runs the program
 export async function main(url?: string): Promise<void> {
   try {
-    const count = await countPosts(url);
+    const feed = await fetchJSON(url);
+    const count = countPosts(feed);
     console.log(count);
   } catch (error: unknown) {
     if (error instanceof Error) {
