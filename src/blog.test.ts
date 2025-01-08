@@ -130,6 +130,54 @@ describe('countPosts', () => {
   });
 });
 
+describe('timeline', () => {
+  it('should display timeline of posts with correct counts', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: [
+            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
+            { id: "2", title: "Post 2", date_published: "2024-12-12T11:00:00Z" },
+            { id: "3", title: "Post 3", date_published: "2024-12-12T12:00:00Z" },
+            { id: "4", title: "Post 4", date_published: "2024-12-13T10:00:00Z" },
+            { id: "5", title: "Post 5", date_published: "2024-12-15T10:00:00Z" }
+          ]
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'timeline');
+
+    expect(mockConsoleLog).toHaveBeenCalledTimes(4);
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(1, '2024-12-12  3');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, '2024-12-13  1');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, '2024-12-14  0');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(4, '2024-12-15  1');
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+  });
+
+  it('should handle empty blog feed for timeline', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: []
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'timeline');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+  });
+});
+
 // Add a new test for unknown commands
 it('should handle unknown commands', async () => {
   await main(TEST_BLOG_URL, 'invalid-command');

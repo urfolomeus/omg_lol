@@ -42,6 +42,40 @@ function countPosts(feed: BlogFeed): number {
   return feed.items.length;
 }
 
+function generateTimeline(feed: BlogFeed): string[] {
+  // Sort posts by date
+  const posts = [...feed.items].sort((a, b) =>
+    new Date(a.date_published).getTime() - new Date(b.date_published).getTime()
+  );
+
+  if (posts.length === 0) {
+    return [];
+  }
+
+  // Get first and last dates
+  const firstDate = new Date(posts[0].date_published);
+  const lastDate = new Date(posts[posts.length - 1].date_published);
+
+  // Create a map of dates to post counts
+  const postCounts = new Map<string, number>();
+  posts.forEach(post => {
+    const date = post.date_published.split('T')[0];
+    postCounts.set(date, (postCounts.get(date) || 0) + 1);
+  });
+
+  // Generate timeline
+  const timeline: string[] = [];
+  const currentDate = new Date(firstDate);
+  while (currentDate <= lastDate) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const count = postCounts.get(dateStr) || 0;
+    timeline.push(`${dateStr}  ${count}`);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return timeline;
+}
+
 // Main function that runs the program
 export async function main(url?: string, command?: string): Promise<void> {
   try {
@@ -52,9 +86,14 @@ export async function main(url?: string, command?: string): Promise<void> {
 
     switch (command) {
       case 'count':
-        const feed = await fetchJSON(feedUrl);
-        const count = countPosts(feed);
+        const countFeed = await fetchJSON(feedUrl);
+        const count = countPosts(countFeed);
         console.log(count);
+        break;
+      case 'timeline':
+        const timelineFeed = await fetchJSON(feedUrl);
+        const timeline = generateTimeline(timelineFeed);
+        timeline.forEach(line => console.log(line));
         break;
       default:
         throw new Error('Unknown blog command: ' + command);

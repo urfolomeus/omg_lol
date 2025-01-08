@@ -58,6 +58,14 @@ Count the number of posts in your blog:
    ./bin/omglol blog count
    ```
 
+Display a timeline of blog post counts by day:
+
+   ```
+   ./bin/omglol blog timeline
+   ```
+
+This command shows the number of posts published each day since the first post, including days with no posts.
+
 ## Development
 
 ### Running Tests
