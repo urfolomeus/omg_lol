@@ -8,7 +8,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "preserveConstEnums": true
   },
   "include": [
     "src/**/*.ts"
@@ -16,5 +20,6 @@
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
-  ]
+  ],
+  "compileOnSave": true
 }

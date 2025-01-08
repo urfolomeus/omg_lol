@@ -1,4 +1,5 @@
 import fetch, { FetchError } from 'node-fetch';
+import { outputDecorator } from './utils/outputDecorator.js';
 
 interface Author {
   name: string;
@@ -35,19 +36,6 @@ function getDateString(date: Date): string {
 
 function getDaysBetween(start: Date, end: Date): number {
   return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-}
-
-// ANSI color codes
-const RED = '\x1b[31m';
-const RESET = '\x1b[0m';
-
-type OutputMode = 'normal' | 'error';
-
-function outputDecorator(output: string, mode: OutputMode = 'normal'): string {
-  if (mode === 'error') {
-    return `${RED}${output}${RESET}`;
-  }
-  return output;
 }
 
 // Helper function to sort posts by date
