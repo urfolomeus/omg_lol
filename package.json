@@ -2,10 +2,10 @@
   "name": "omglol-tools",
   "version": "1.0.0",
   "description": "Tools for working with omg.lol",
-  "main": "dist/count-posts.js",
+  "main": "dist/blog.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/count-posts.js",
+    "start": "node dist/blog.js",
     "test": "vitest"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { main } from './count-posts';
+import { main } from './blog';
 
 const TEST_BLOG_URL = 'https://test.weblog.lol/feed.json';
 
