@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" = "blog" ] && [ "$2" = "count" ]; then
+  node dist/count-posts.js
+else
+  echo "Unknown command"
+  exit 1
+fi
