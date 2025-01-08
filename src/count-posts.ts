@@ -27,21 +27,19 @@ export async function fetchJSON(url?: string): Promise<BlogFeed> {
   try {
     const response = await fetch(feedUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch blog posts: Server returned ' + response.status);
+      throw new Error(`Server returned ${response.status}`);
     }
+
     const data = await response.json() as BlogFeed;
     if (!data.items) {
-      throw new Error('Failed to fetch blog posts: Invalid response format');
+      throw new Error('Invalid response format');
     }
+
     return data;
   } catch (error) {
-    if (error instanceof FetchError) {
-      throw new Error('Failed to fetch blog posts: Network error');
-    }
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error(`Failed to fetch blog posts: ${String(error)}`);
+    // Wrap all errors in a consistent format
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch blog posts: ${message}`);
   }
 }
 
