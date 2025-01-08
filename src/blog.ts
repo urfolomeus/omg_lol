@@ -120,26 +120,22 @@ export async function main(url?: string, command?: string): Promise<void> {
       throw new Error('Blog feed URL not provided');
     }
 
+    const knownCommands = ['count', 'timeline', 'track'] as const;
+    if (!command || !knownCommands.includes(command as typeof knownCommands[number])) {
+      throw new Error('Unknown blog command: ' + command);
+    }
+
+    const feed = await fetchJSON(feedUrl);
     switch (command) {
       case 'count':
-      case 'timeline':
-      case 'track': {
-        const feed = await fetchJSON(feedUrl);
-        switch (command) {
-          case 'count':
-            handleCount(feed);
-            break;
-          case 'timeline':
-            handleTimeline(feed);
-            break;
-          case 'track':
-            handleTrack(feed);
-            break;
-        }
+        handleCount(feed);
         break;
-      }
-      default:
-        throw new Error('Unknown blog command: ' + command);
+      case 'timeline':
+        handleTimeline(feed);
+        break;
+      case 'track':
+        handleTrack(feed);
+        break;
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
