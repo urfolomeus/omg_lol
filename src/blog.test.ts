@@ -41,7 +41,7 @@ describe('countPosts', () => {
       })
     );
 
-    await main(TEST_BLOG_URL);
+    await main(TEST_BLOG_URL, 'count');
 
     expect(mockConsoleLog).toHaveBeenCalledWith(2);
     expect(mockConsoleError).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe('countPosts', () => {
       })
     );
 
-    await main(TEST_BLOG_URL);
+    await main(TEST_BLOG_URL, 'count');
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
@@ -84,7 +84,7 @@ describe('countPosts', () => {
       })
     );
 
-    await main(TEST_BLOG_URL);
+    await main(TEST_BLOG_URL, 'count');
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
@@ -93,4 +93,16 @@ describe('countPosts', () => {
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
+});
+
+// Add a new test for unknown commands
+it('should handle unknown commands', async () => {
+  await main(TEST_BLOG_URL, 'invalid-command');
+
+  expect(mockConsoleLog).not.toHaveBeenCalled();
+  expect(mockConsoleError).toHaveBeenCalledWith(
+    'Error:',
+    'Unknown blog command: invalid-command'
+  );
+  expect(mockExit).toHaveBeenCalledWith(1);
 });
