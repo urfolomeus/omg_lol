@@ -26,6 +26,10 @@ afterEach(() => {
 
 afterAll(() => server.close());
 
+// ANSI color codes for test verification
+const RED = '\x1b[31m';
+const RESET = '\x1b[0m';
+
 // Test helper functions
 function testInvalidJsonStructure(command: string) {
   it('should handle invalid JSON structure', async () => {
@@ -164,7 +168,7 @@ describe('timeline', () => {
     expect(mockConsoleLog).toHaveBeenCalledTimes(4);
     expect(mockConsoleLog).toHaveBeenNthCalledWith(1, '2024-12-12  3');
     expect(mockConsoleLog).toHaveBeenNthCalledWith(2, '2024-12-13  1');
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, '2024-12-14  0');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, `${RED}2024-12-14  0${RESET}`);
     expect(mockConsoleLog).toHaveBeenNthCalledWith(4, '2024-12-15  1');
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();

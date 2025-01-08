@@ -37,6 +37,10 @@ function getDaysBetween(start: Date, end: Date): number {
   return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
+// ANSI color codes
+const RED = '\x1b[31m';
+const RESET = '\x1b[0m';
+
 // Helper function to sort posts by date
 function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
   return [...posts].sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
@@ -86,7 +90,12 @@ function handleTimeline(feed: BlogFeed): void {
   while (currentDate <= lastDate) {
     const dateStr = getDateString(currentDate);
     const count = postCounts.get(dateStr) || 0;
-    console.log(`${dateStr}  ${count}`);
+    const line = `${dateStr}  ${count}`;
+    if (count === 0) {
+      console.log(`${RED}${line}${RESET}`);
+    } else {
+      console.log(line);
+    }
     currentDate.setDate(currentDate.getDate() + 1);
   }
 }
