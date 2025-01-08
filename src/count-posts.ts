@@ -18,7 +18,7 @@ interface BlogFeed {
   items: BlogPost[];
 }
 
-export async function fetchJSON(url: string): Promise<BlogFeed> {
+async function fetchJSON(url: string): Promise<BlogFeed> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -38,7 +38,7 @@ export async function fetchJSON(url: string): Promise<BlogFeed> {
   }
 }
 
-export function countPosts(feed: BlogFeed): number {
+function countPosts(feed: BlogFeed): number {
   return feed.items.length;
 }
 
