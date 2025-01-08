@@ -54,7 +54,7 @@ Before first use, make the CLI script executable:
 
 | command | description |
 |:--|:---|
-| <nowrap>`./bin/omglol blog status`</nowrap> | Check your blogging status: Total = number of posts published, Days = number of days since your first post, Delta = delta between posts and days (positive means you're ahead, negative means you're behind) |
+| <nowrap>`./bin/omglol blog status`</nowrap> | Check your blogging status:<br>  Total = number of posts published<br>  Days = number of days since your first post<br>  Delta = delta between posts and days (positive means you're ahead, negative means you're behind) |
 | <nowrap>`./bin/omglol blog timeline`</nowrap> | Display a timeline of blog post counts by day since the first post, highlighting days with no posts. |
 
 ## Development
