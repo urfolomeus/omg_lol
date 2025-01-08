@@ -41,6 +41,15 @@ function getDaysBetween(start: Date, end: Date): number {
 const RED = '\x1b[31m';
 const RESET = '\x1b[0m';
 
+type OutputMode = 'normal' | 'error';
+
+function outputDecorator(output: string, mode: OutputMode = 'normal'): string {
+  if (mode === 'error') {
+    return `${RED}${output}${RESET}`;
+  }
+  return output;
+}
+
 // Helper function to sort posts by date
 function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
   return [...posts].sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
@@ -91,11 +100,7 @@ function handleTimeline(feed: BlogFeed): void {
     const dateStr = getDateString(currentDate);
     const count = postCounts.get(dateStr) || 0;
     const line = `${dateStr}  ${count}`;
-    if (count === 0) {
-      console.log(`${RED}${line}${RESET}`);
-    } else {
-      console.log(line);
-    }
+    console.log(outputDecorator(line, count === 0 ? 'error' : 'normal'));
     currentDate.setDate(currentDate.getDate() + 1);
   }
 }
@@ -104,7 +109,7 @@ function handleStatus(feed: BlogFeed): void {
   const posts = sortPostsByDate(feed.items);
 
   if (posts.length === 0) {
-    console.log('Total: 0, Days: 0, Delta: 0');
+    console.log(outputDecorator('Total: 0, Days: 0, Delta: 0'));
     return;
   }
 
@@ -114,7 +119,7 @@ function handleStatus(feed: BlogFeed): void {
   const dayCount = getDaysBetween(firstDate, today);
   const delta = total - dayCount;
 
-  console.log(`Total: ${total}, Days: ${dayCount}, Delta: ${delta}`);
+  console.log(outputDecorator(`Total: ${total}, Days: ${dayCount}, Delta: ${delta}`));
 }
 
 // Main function that runs the program
@@ -141,9 +146,9 @@ export async function main(url?: string, command?: string): Promise<void> {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error('Error:', error.message);
+      console.error('Error:', outputDecorator(error.message, 'error'));
     } else {
-      console.error('Error:', String(error));
+      console.error('Error:', outputDecorator(String(error), 'error'));
     }
     process.exit(1);
   }
@@ -154,3 +159,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2];
   main(undefined, command);
 }
+
+export { outputDecorator };

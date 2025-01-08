@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { main } from './blog';
+import { main, outputDecorator } from './blog';
 
 const TEST_BLOG_URL = 'https://test.weblog.lol/feed.json';
 
@@ -26,10 +26,6 @@ afterEach(() => {
 
 afterAll(() => server.close());
 
-// ANSI color codes for test verification
-const RED = '\x1b[31m';
-const RESET = '\x1b[0m';
-
 // Test helper functions
 function testInvalidJsonStructure(command: string) {
   it('should handle invalid JSON structure', async () => {
@@ -48,7 +44,7 @@ function testInvalidJsonStructure(command: string) {
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
       'Error:',
-      'Failed to fetch blog posts: Invalid response format'
+      outputDecorator('Failed to fetch blog posts: Invalid response format', 'error')
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
@@ -75,7 +71,7 @@ function testNetworkError(command: string) {
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
       'Error:',
-      'Failed to fetch blog posts: Server returned 500'
+      outputDecorator('Failed to fetch blog posts: Server returned 500', 'error')
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
@@ -96,7 +92,7 @@ function testEmptyBlogFeed(command: string, expectedOutput: string | null) {
     await main(TEST_BLOG_URL, command);
 
     if (expectedOutput) {
-      expect(mockConsoleLog).toHaveBeenCalledWith(expectedOutput);
+      expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator(expectedOutput));
     } else {
       expect(mockConsoleLog).not.toHaveBeenCalled();
     }
@@ -120,10 +116,10 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
     if (Array.isArray(expectedOutput)) {
       expect(mockConsoleLog).toHaveBeenCalledTimes(expectedOutput.length);
       expectedOutput.forEach((output, index) => {
-        expect(mockConsoleLog).toHaveBeenNthCalledWith(index + 1, output);
+        expect(mockConsoleLog).toHaveBeenNthCalledWith(index + 1, outputDecorator(output));
       });
     } else {
-      expect(mockConsoleLog).toHaveBeenCalledWith(expectedOutput);
+      expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator(expectedOutput));
     }
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
@@ -139,7 +135,7 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
       'Error:',
-      'Blog feed URL not provided'
+      outputDecorator('Blog feed URL not provided', 'error')
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
@@ -166,10 +162,10 @@ describe('timeline', () => {
     await main(TEST_BLOG_URL, 'timeline');
 
     expect(mockConsoleLog).toHaveBeenCalledTimes(4);
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(1, '2024-12-12  3');
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, '2024-12-13  1');
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, `${RED}2024-12-14  0${RESET}`);
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(4, '2024-12-15  1');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(1, outputDecorator('2024-12-12  3'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, outputDecorator('2024-12-13  1'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, outputDecorator('2024-12-14  0', 'error'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(4, outputDecorator('2024-12-15  1'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });
@@ -218,7 +214,7 @@ describe('status', () => {
 
     await main(TEST_BLOG_URL, 'status');
 
-    expect(mockConsoleLog).toHaveBeenCalledWith('Total: 3, Days: 4, Delta: -1');
+    expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 3, Days: 4, Delta: -1'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });
@@ -246,7 +242,7 @@ describe('command validation', () => {
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
       'Error:',
-      'Unknown blog command: invalid-command'
+      outputDecorator('Unknown blog command: invalid-command', 'error')
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
@@ -257,7 +253,7 @@ describe('command validation', () => {
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
       'Error:',
-      'Unknown blog command: undefined'
+      outputDecorator('Unknown blog command: undefined', 'error')
     );
     expect(mockExit).toHaveBeenCalledWith(1);
   });
