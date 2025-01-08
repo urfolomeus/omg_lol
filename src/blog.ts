@@ -19,11 +19,6 @@ interface BlogFeed {
   items: BlogPost[];
 }
 
-interface TrackStats {
-  total: number;
-  dayCount: number;
-  delta: number;
-}
 
 // Helper functions for date handling
 function getPostDate(post: BlogPost): Date {
