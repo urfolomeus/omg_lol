@@ -18,14 +18,9 @@ interface BlogFeed {
   items: BlogPost[];
 }
 
-export async function fetchJSON(url?: string): Promise<BlogFeed> {
-  const feedUrl = url || process.env.BLOG_FEED_URL;
-  if (!feedUrl) {
-    throw new Error('Blog feed URL not provided');
-  }
-
+export async function fetchJSON(url: string): Promise<BlogFeed> {
   try {
-    const response = await fetch(feedUrl);
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Server returned ${response.status}`);
     }
@@ -50,7 +45,12 @@ export function countPosts(feed: BlogFeed): number {
 // Main function that runs the program
 export async function main(url?: string): Promise<void> {
   try {
-    const feed = await fetchJSON(url);
+    const feedUrl = url || process.env.BLOG_FEED_URL;
+    if (!feedUrl) {
+      throw new Error('Blog feed URL not provided');
+    }
+
+    const feed = await fetchJSON(feedUrl);
     const count = countPosts(feed);
     console.log(count);
   } catch (error: unknown) {
