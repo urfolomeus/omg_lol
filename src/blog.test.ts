@@ -178,7 +178,7 @@ describe('timeline', () => {
   });
 });
 
-describe('track', () => {
+describe('status', () => {
   beforeEach(() => {
     // Mock the current date to a fixed value for consistent testing
     vi.useFakeTimers();
@@ -189,7 +189,7 @@ describe('track', () => {
     vi.useRealTimers();
   });
 
-  it('should display correct tracking stats', async () => {
+  it('should display correct status stats', async () => {
     server.use(
       http.get(TEST_BLOG_URL, () => {
         return HttpResponse.json({
@@ -204,7 +204,7 @@ describe('track', () => {
       })
     );
 
-    await main(TEST_BLOG_URL, 'track');
+    await main(TEST_BLOG_URL, 'status');
 
     // From Dec 12 to Dec 15 inclusive = 4 days
     // 3 posts over 4 days = -1 delta
@@ -213,7 +213,7 @@ describe('track', () => {
     expect(mockExit).not.toHaveBeenCalled();
   });
 
-  it('should handle empty blog feed for track', async () => {
+  it('should handle empty blog feed for status', async () => {
     server.use(
       http.get(TEST_BLOG_URL, () => {
         return HttpResponse.json({
@@ -224,7 +224,7 @@ describe('track', () => {
       })
     );
 
-    await main(TEST_BLOG_URL, 'track');
+    await main(TEST_BLOG_URL, 'status');
 
     expect(mockConsoleLog).toHaveBeenCalledWith('Total: 0, Days: 0, Delta: 0');
     expect(mockConsoleError).not.toHaveBeenCalled();

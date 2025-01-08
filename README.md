@@ -66,10 +66,10 @@ Display a timeline of blog post counts by day:
 
 This command shows the number of posts published each day since the first post, including days with no posts.
 
-Track your blogging progress:
+Check your blogging status:
 
    ```
-   ./bin/omglol blog track
+   ./bin/omglol blog status
    ```
 
 This command shows statistics about your blogging frequency, including:

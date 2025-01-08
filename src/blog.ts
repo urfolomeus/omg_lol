@@ -95,7 +95,7 @@ function handleTimeline(feed: BlogFeed): void {
   }
 }
 
-function handleTrack(feed: BlogFeed): void {
+function handleStatus(feed: BlogFeed): void {
   const posts = sortPostsByDate(feed.items);
 
   if (posts.length === 0) {
@@ -120,7 +120,7 @@ export async function main(url?: string, command?: string): Promise<void> {
       throw new Error('Blog feed URL not provided');
     }
 
-    const knownCommands = ['count', 'timeline', 'track'] as const;
+    const knownCommands = ['count', 'timeline', 'status'] as const;
     if (!command || !knownCommands.includes(command as typeof knownCommands[number])) {
       throw new Error('Unknown blog command: ' + command);
     }
@@ -133,8 +133,8 @@ export async function main(url?: string, command?: string): Promise<void> {
       case 'timeline':
         handleTimeline(feed);
         break;
-      case 'track':
-        handleTrack(feed);
+      case 'status':
+        handleStatus(feed);
         break;
     }
   } catch (error: unknown) {
