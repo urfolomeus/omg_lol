@@ -18,6 +18,30 @@ interface BlogFeed {
   items: BlogPost[];
 }
 
+interface TrackStats {
+  total: number;
+  dayCount: number;
+  delta: number;
+}
+
+// Helper functions for date handling
+function getPostDate(post: BlogPost): Date {
+  return new Date(post.date_published);
+}
+
+function getDateString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function getDaysBetween(start: Date, end: Date): number {
+  return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+// Helper function to sort posts by date
+function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
+  return [...posts].sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
+}
+
 async function fetchJSON(url: string): Promise<BlogFeed> {
   try {
     const response = await fetch(url);
@@ -38,68 +62,54 @@ async function fetchJSON(url: string): Promise<BlogFeed> {
   }
 }
 
-function countPosts(feed: BlogFeed): number {
-  return feed.items.length;
+// Command handlers
+function handleCount(feed: BlogFeed): void {
+  console.log(feed.items.length);
 }
 
-function generateTimeline(feed: BlogFeed): string[] {
-  // Sort posts by date
-  const posts = [...feed.items].sort((a, b) =>
-    new Date(a.date_published).getTime() - new Date(b.date_published).getTime()
-  );
+function handleTimeline(feed: BlogFeed): void {
+  const posts = sortPostsByDate(feed.items);
 
   if (posts.length === 0) {
-    return [];
+    return;
   }
 
   // Get first and last dates
-  const firstDate = new Date(posts[0].date_published);
-  const lastDate = new Date(posts[posts.length - 1].date_published);
+  const firstDate = getPostDate(posts[0]);
+  const lastDate = getPostDate(posts[posts.length - 1]);
 
   // Create a map of dates to post counts
   const postCounts = new Map<string, number>();
   posts.forEach(post => {
-    const date = post.date_published.split('T')[0];
+    const date = getDateString(getPostDate(post));
     postCounts.set(date, (postCounts.get(date) || 0) + 1);
   });
 
   // Generate timeline
-  const timeline: string[] = [];
   const currentDate = new Date(firstDate);
   while (currentDate <= lastDate) {
-    const dateStr = currentDate.toISOString().split('T')[0];
+    const dateStr = getDateString(currentDate);
     const count = postCounts.get(dateStr) || 0;
-    timeline.push(`${dateStr}  ${count}`);
+    console.log(`${dateStr}  ${count}`);
     currentDate.setDate(currentDate.getDate() + 1);
   }
-
-  return timeline;
 }
 
-interface TrackStats {
-  total: number;
-  dayCount: number;
-  delta: number;
-}
-
-function calculateTrackStats(feed: BlogFeed): TrackStats {
-  const posts = [...feed.items].sort((a, b) =>
-    new Date(a.date_published).getTime() - new Date(b.date_published).getTime()
-  );
+function handleTrack(feed: BlogFeed): void {
+  const posts = sortPostsByDate(feed.items);
 
   if (posts.length === 0) {
-    return { total: 0, dayCount: 0, delta: 0 };
+    console.log('Total: 0, Days: 0, Delta: 0');
+    return;
   }
 
   const total = posts.length;
-  const firstDate = new Date(posts[0].date_published);
+  const firstDate = getPostDate(posts[0]);
   const today = new Date();
-
-  // Calculate days between first post and today (inclusive)
-  const dayCount = Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const dayCount = getDaysBetween(firstDate, today);
   const delta = total - dayCount;
 
-  return { total, dayCount, delta };
+  console.log(`Total: ${total}, Days: ${dayCount}, Delta: ${delta}`);
 }
 
 // Main function that runs the program
@@ -112,20 +122,22 @@ export async function main(url?: string, command?: string): Promise<void> {
 
     switch (command) {
       case 'count':
-        const countFeed = await fetchJSON(feedUrl);
-        const count = countPosts(countFeed);
-        console.log(count);
-        break;
       case 'timeline':
-        const timelineFeed = await fetchJSON(feedUrl);
-        const timeline = generateTimeline(timelineFeed);
-        timeline.forEach(line => console.log(line));
+      case 'track': {
+        const feed = await fetchJSON(feedUrl);
+        switch (command) {
+          case 'count':
+            handleCount(feed);
+            break;
+          case 'timeline':
+            handleTimeline(feed);
+            break;
+          case 'track':
+            handleTrack(feed);
+            break;
+        }
         break;
-      case 'track':
-        const trackFeed = await fetchJSON(feedUrl);
-        const stats = calculateTrackStats(trackFeed);
-        console.log(`Total: ${stats.total}, Days: ${stats.dayCount}, Delta: ${stats.delta}`);
-        break;
+      }
       default:
         throw new Error('Unknown blog command: ' + command);
     }
