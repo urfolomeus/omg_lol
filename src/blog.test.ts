@@ -26,110 +26,6 @@ afterEach(() => {
 
 afterAll(() => server.close());
 
-describe('countPosts', () => {
-  it('should correctly count posts from valid JSON', async () => {
-    server.use(
-      http.get(TEST_BLOG_URL, () => {
-        return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog",
-          items: [
-            { id: "1", title: "Post 1" },
-            { id: "2", title: "Post 2" }
-          ]
-        });
-      })
-    );
-
-    await main(TEST_BLOG_URL, 'count');
-
-    expect(mockConsoleLog).toHaveBeenCalledWith(2);
-    expect(mockConsoleError).not.toHaveBeenCalled();
-    expect(mockExit).not.toHaveBeenCalled();
-  });
-
-  it('should handle invalid JSON structure', async () => {
-    server.use(
-      http.get(TEST_BLOG_URL, () => {
-        return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog"
-          // Missing 'items' array
-        });
-      })
-    );
-
-    await main(TEST_BLOG_URL, 'count');
-
-    expect(mockConsoleLog).not.toHaveBeenCalled();
-    expect(mockConsoleError).toHaveBeenCalledWith(
-      'Error:',
-      'Failed to fetch blog posts: Invalid response format'
-    );
-    expect(mockExit).toHaveBeenCalledWith(1);
-  });
-
-  it('should handle network errors', async () => {
-    server.use(
-      http.get(TEST_BLOG_URL, () => {
-        return new HttpResponse(
-          JSON.stringify({ error: 'Internal Server Error' }),
-          {
-            status: 500,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      })
-    );
-
-    await main(TEST_BLOG_URL, 'count');
-
-    expect(mockConsoleLog).not.toHaveBeenCalled();
-    expect(mockConsoleError).toHaveBeenCalledWith(
-      'Error:',
-      'Failed to fetch blog posts: Server returned 500'
-    );
-    expect(mockExit).toHaveBeenCalledWith(1);
-  });
-
-  it('should use BLOG_FEED_URL environment variable when no URL provided', async () => {
-    process.env.BLOG_FEED_URL = TEST_BLOG_URL;
-
-    server.use(
-      http.get(TEST_BLOG_URL, () => {
-        return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog",
-          items: [{ id: "1", title: "Post 1" }]
-        });
-      })
-    );
-
-    await main(undefined, 'count');
-
-    expect(mockConsoleLog).toHaveBeenCalledWith(1);
-    expect(mockConsoleError).not.toHaveBeenCalled();
-    expect(mockExit).not.toHaveBeenCalled();
-
-    delete process.env.BLOG_FEED_URL;
-  });
-
-  it('should error when no URL is provided and BLOG_FEED_URL is not set', async () => {
-    delete process.env.BLOG_FEED_URL;
-
-    await main(undefined, 'count');
-
-    expect(mockConsoleLog).not.toHaveBeenCalled();
-    expect(mockConsoleError).toHaveBeenCalledWith(
-      'Error:',
-      'Blog feed URL not provided'
-    );
-    expect(mockExit).toHaveBeenCalledWith(1);
-  });
-});
-
 describe('timeline', () => {
   it('should display timeline of posts with correct counts', async () => {
     server.use(
@@ -175,6 +71,92 @@ describe('timeline', () => {
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
+  });
+
+  it('should handle invalid JSON structure', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog"
+          // Missing 'items' array
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'timeline');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Failed to fetch blog posts: Invalid response format'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+  });
+
+  it('should handle network errors', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return new HttpResponse(
+          JSON.stringify({ error: 'Internal Server Error' }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'timeline');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Failed to fetch blog posts: Server returned 500'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+  });
+
+  it('should use BLOG_FEED_URL environment variable when no URL provided', async () => {
+    process.env.BLOG_FEED_URL = TEST_BLOG_URL;
+
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: [
+            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
+            { id: "2", title: "Post 2", date_published: "2024-12-13T10:00:00Z" }
+          ]
+        });
+      })
+    );
+
+    await main(undefined, 'timeline');
+
+    expect(mockConsoleLog).toHaveBeenCalledTimes(2);
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(1, '2024-12-12  1');
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, '2024-12-13  1');
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+
+    delete process.env.BLOG_FEED_URL;
+  });
+
+  it('should error when no URL is provided and BLOG_FEED_URL is not set', async () => {
+    delete process.env.BLOG_FEED_URL;
+
+    await main(undefined, 'timeline');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Blog feed URL not provided'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
   });
 });
 
@@ -229,6 +211,89 @@ describe('status', () => {
     expect(mockConsoleLog).toHaveBeenCalledWith('Total: 0, Days: 0, Delta: 0');
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
+  });
+
+  it('should handle invalid JSON structure', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog"
+          // Missing 'items' array
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'status');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Failed to fetch blog posts: Invalid response format'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+  });
+
+  it('should handle network errors', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return new HttpResponse(
+          JSON.stringify({ error: 'Internal Server Error' }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'status');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Failed to fetch blog posts: Server returned 500'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+  });
+
+  it('should use BLOG_FEED_URL environment variable when no URL provided', async () => {
+    process.env.BLOG_FEED_URL = TEST_BLOG_URL;
+
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: [
+            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" }
+          ]
+        });
+      })
+    );
+
+    await main(undefined, 'status');
+
+    expect(mockConsoleLog).toHaveBeenCalledWith('Total: 1, Days: 4, Delta: -3');
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+
+    delete process.env.BLOG_FEED_URL;
+  });
+
+  it('should error when no URL is provided and BLOG_FEED_URL is not set', async () => {
+    delete process.env.BLOG_FEED_URL;
+
+    await main(undefined, 'status');
+
+    expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'Error:',
+      'Blog feed URL not provided'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
   });
 });
 

@@ -52,12 +52,6 @@ Before first use, make the CLI script executable:
 
 ### Blog Commands
 
-Count the number of posts in your blog:
-
-   ```
-   ./bin/omglol blog count
-   ```
-
 Display a timeline of blog post counts by day:
 
    ```

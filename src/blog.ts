@@ -63,10 +63,6 @@ async function fetchJSON(url: string): Promise<BlogFeed> {
 }
 
 // Command handlers
-function handleCount(feed: BlogFeed): void {
-  console.log(feed.items.length);
-}
-
 function handleTimeline(feed: BlogFeed): void {
   const posts = sortPostsByDate(feed.items);
 
@@ -120,16 +116,13 @@ export async function main(url?: string, command?: string): Promise<void> {
       throw new Error('Blog feed URL not provided');
     }
 
-    const knownCommands = ['count', 'timeline', 'status'] as const;
+    const knownCommands = ['timeline', 'status'] as const;
     if (!command || !knownCommands.includes(command as typeof knownCommands[number])) {
       throw new Error('Unknown blog command: ' + command);
     }
 
     const feed = await fetchJSON(feedUrl);
     switch (command) {
-      case 'count':
-        handleCount(feed);
-        break;
       case 'timeline':
         handleTimeline(feed);
         break;
