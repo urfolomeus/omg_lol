@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { main } from './blog';
@@ -173,6 +173,60 @@ describe('timeline', () => {
     await main(TEST_BLOG_URL, 'timeline');
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+  });
+});
+
+describe('track', () => {
+  beforeEach(() => {
+    // Mock the current date to a fixed value for consistent testing
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-12-15T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should display correct tracking stats', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: [
+            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
+            { id: "2", title: "Post 2", date_published: "2024-12-12T11:00:00Z" },
+            { id: "3", title: "Post 3", date_published: "2024-12-13T12:00:00Z" }
+          ]
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'track');
+
+    // From Dec 12 to Dec 15 inclusive = 4 days
+    // 3 posts over 4 days = -1 delta
+    expect(mockConsoleLog).toHaveBeenCalledWith('Total: 3, Days: 4, Delta: -1');
+    expect(mockConsoleError).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+  });
+
+  it('should handle empty blog feed for track', async () => {
+    server.use(
+      http.get(TEST_BLOG_URL, () => {
+        return HttpResponse.json({
+          version: "https://jsonfeed.org/version/1.1",
+          title: "Test Blog",
+          items: []
+        });
+      })
+    );
+
+    await main(TEST_BLOG_URL, 'track');
+
+    expect(mockConsoleLog).toHaveBeenCalledWith('Total: 0, Days: 0, Delta: 0');
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });

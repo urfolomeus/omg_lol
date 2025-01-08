@@ -76,6 +76,32 @@ function generateTimeline(feed: BlogFeed): string[] {
   return timeline;
 }
 
+interface TrackStats {
+  total: number;
+  dayCount: number;
+  delta: number;
+}
+
+function calculateTrackStats(feed: BlogFeed): TrackStats {
+  const posts = [...feed.items].sort((a, b) =>
+    new Date(a.date_published).getTime() - new Date(b.date_published).getTime()
+  );
+
+  if (posts.length === 0) {
+    return { total: 0, dayCount: 0, delta: 0 };
+  }
+
+  const total = posts.length;
+  const firstDate = new Date(posts[0].date_published);
+  const today = new Date();
+
+  // Calculate days between first post and today (inclusive)
+  const dayCount = Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const delta = total - dayCount;
+
+  return { total, dayCount, delta };
+}
+
 // Main function that runs the program
 export async function main(url?: string, command?: string): Promise<void> {
   try {
@@ -94,6 +120,11 @@ export async function main(url?: string, command?: string): Promise<void> {
         const timelineFeed = await fetchJSON(feedUrl);
         const timeline = generateTimeline(timelineFeed);
         timeline.forEach(line => console.log(line));
+        break;
+      case 'track':
+        const trackFeed = await fetchJSON(feedUrl);
+        const stats = calculateTrackStats(trackFeed);
+        console.log(`Total: ${stats.total}, Days: ${stats.dayCount}, Delta: ${stats.delta}`);
         break;
       default:
         throw new Error('Unknown blog command: ' + command);
