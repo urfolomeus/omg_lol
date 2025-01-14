@@ -4,7 +4,9 @@ import { setupServer } from 'msw/node';
 import { main } from './blog.js';
 import { outputDecorator } from './utils/outputDecorator.js';
 
-const TEST_BLOG_URL = 'https://test.weblog.lol/feed.json';
+const TEST_API_URL = 'https://api.omg.lol/address/test';
+const TEST_API_TOKEN = 'test-token';
+const TEST_BLOG_URL = `${TEST_API_URL}/weblog/entries`;
 
 // Capture console output
 const mockConsoleError = vi.spyOn(console, 'error');
@@ -16,7 +18,10 @@ const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as
 // Setup MSW server for mocking HTTP requests
 const server = setupServer();
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+  process.env.API_TOKEN = TEST_API_TOKEN;
+});
 
 afterEach(() => {
   server.resetHandlers();
@@ -25,22 +30,31 @@ afterEach(() => {
   mockExit.mockReset();
 });
 
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+  delete process.env.API_TOKEN;
+});
 
 // Test helper functions
 function testInvalidJsonStructure(command: string) {
   it('should handle invalid JSON structure', async () => {
     server.use(
-      http.get(TEST_BLOG_URL, () => {
+      http.get(TEST_BLOG_URL, ({ request }) => {
+        // Verify the Authorization header
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader !== `Bearer ${TEST_API_TOKEN}`) {
+          return new HttpResponse(null, { status: 401 });
+        }
+
         return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog"
-          // Missing 'items' array
+          response: {
+            // Missing 'entries' array
+          }
         });
       })
     );
 
-    await main(TEST_BLOG_URL, command);
+    await main(TEST_API_URL, command);
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
@@ -56,7 +70,7 @@ function testNetworkError(command: string) {
     server.use(
       http.get(TEST_BLOG_URL, () => {
         return new HttpResponse(
-          JSON.stringify({ error: 'Internal Server Error' }),
+          JSON.stringify({ response: { error: 'Internal Server Error' } }),
           {
             status: 500,
             headers: {
@@ -67,7 +81,7 @@ function testNetworkError(command: string) {
       })
     );
 
-    await main(TEST_BLOG_URL, command);
+    await main(TEST_API_URL, command);
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
@@ -83,14 +97,12 @@ function testEmptyBlogFeed(command: string, expectedOutput: string | null) {
     server.use(
       http.get(TEST_BLOG_URL, () => {
         return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog",
-          items: []
+          response: { entries: [] }
         });
       })
     );
 
-    await main(TEST_BLOG_URL, command);
+    await main(TEST_API_URL, command);
 
     if (expectedOutput) {
       expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator(expectedOutput));
@@ -103,12 +115,12 @@ function testEmptyBlogFeed(command: string, expectedOutput: string | null) {
 }
 
 function testUrlHandling(command: string, mockResponse: object, expectedOutput: string[] | string) {
-  it('should use BLOG_FEED_URL environment variable when no URL provided', async () => {
-    process.env.BLOG_FEED_URL = TEST_BLOG_URL;
+  it('should use API_URL environment variable when no URL provided', async () => {
+    process.env.API_URL = TEST_API_URL;
 
     server.use(
       http.get(TEST_BLOG_URL, () => {
-        return HttpResponse.json(mockResponse);
+        return HttpResponse.json({ response: mockResponse });
       })
     );
 
@@ -125,11 +137,11 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
 
-    delete process.env.BLOG_FEED_URL;
+    delete process.env.API_URL;
   });
 
-  it('should error when no URL is provided and BLOG_FEED_URL is not set', async () => {
-    delete process.env.BLOG_FEED_URL;
+  it('should error when no URL is provided and API_URL is not set', async () => {
+    delete process.env.API_URL;
 
     await main(undefined, command);
 
@@ -145,27 +157,33 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
 describe('timeline', () => {
   it('should display timeline of posts with correct counts', async () => {
     server.use(
-      http.get(TEST_BLOG_URL, () => {
+      http.get(TEST_BLOG_URL, ({ request }) => {
+        // Verify the Authorization header
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader !== `Bearer ${TEST_API_TOKEN}`) {
+          return new HttpResponse(null, { status: 401 });
+        }
+
         return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog",
-          items: [
-            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
-            { id: "2", title: "Post 2", date_published: "2024-12-12T11:00:00Z" },
-            { id: "3", title: "Post 3", date_published: "2024-12-12T12:00:00Z" },
-            { id: "4", title: "Post 4", date_published: "2024-12-13T10:00:00Z" },
-            { id: "5", title: "Post 5", date_published: "2024-12-15T10:00:00Z" }
-          ]
+          response: {
+            entries: [
+              { entry: "1", title: "Post 1", date: "1734001200", type: "post" },
+              { entry: "2", title: "Post 2", date: "1734001200", type: "post" },
+              { entry: "3", title: "Post 3", date: "1734001200", type: "post" },
+              { entry: "4", title: "Post 4", date: "1734174000", type: "post" },
+              { entry: "5", title: "Post 5", date: "1734260400", type: "post" }
+            ]
+          }
         });
       })
     );
 
-    await main(TEST_BLOG_URL, 'timeline');
+    await main(TEST_API_URL, 'timeline');
 
     expect(mockConsoleLog).toHaveBeenCalledTimes(4);
     expect(mockConsoleLog).toHaveBeenNthCalledWith(1, outputDecorator('2024-12-12  3'));
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, outputDecorator('2024-12-13  1'));
-    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, outputDecorator('2024-12-14  0', 'error'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(2, outputDecorator('2024-12-13  0', 'error'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(3, outputDecorator('2024-12-14  1'));
     expect(mockConsoleLog).toHaveBeenNthCalledWith(4, outputDecorator('2024-12-15  1'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
@@ -177,11 +195,9 @@ describe('timeline', () => {
   testUrlHandling(
     'timeline',
     {
-      version: "https://jsonfeed.org/version/1.1",
-      title: "Test Blog",
-      items: [
-        { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
-        { id: "2", title: "Post 2", date_published: "2024-12-13T10:00:00Z" }
+      entries: [
+        { entry: "1", title: "Post 1", date: "1734001200", type: "post" },
+        { entry: "2", title: "Post 2", date: "1734087600", type: "post" }
       ]
     },
     ['2024-12-12  1', '2024-12-13  1']
@@ -200,20 +216,26 @@ describe('status', () => {
 
   it('should display correct status stats', async () => {
     server.use(
-      http.get(TEST_BLOG_URL, () => {
+      http.get(TEST_BLOG_URL, ({ request }) => {
+        // Verify the Authorization header
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader !== `Bearer ${TEST_API_TOKEN}`) {
+          return new HttpResponse(null, { status: 401 });
+        }
+
         return HttpResponse.json({
-          version: "https://jsonfeed.org/version/1.1",
-          title: "Test Blog",
-          items: [
-            { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" },
-            { id: "2", title: "Post 2", date_published: "2024-12-12T11:00:00Z" },
-            { id: "3", title: "Post 3", date_published: "2024-12-13T12:00:00Z" }
-          ]
+          response: {
+            entries: [
+              { entry: "1", title: "Post 1", date: "1734001200", type: "post" },
+              { entry: "2", title: "Post 2", date: "1734001200", type: "post" },
+              { entry: "3", title: "Post 3", date: "1734001200", type: "post" }
+            ]
+          }
         });
       })
     );
 
-    await main(TEST_BLOG_URL, 'status');
+    await main(TEST_API_URL, 'status');
 
     expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 3, Days: 4, Delta: -1'));
     expect(mockConsoleError).not.toHaveBeenCalled();
@@ -226,10 +248,8 @@ describe('status', () => {
   testUrlHandling(
     'status',
     {
-      version: "https://jsonfeed.org/version/1.1",
-      title: "Test Blog",
-      items: [
-        { id: "1", title: "Post 1", date_published: "2024-12-12T10:00:00Z" }
+      entries: [
+        { entry: "1", title: "Post 1", date: "1734001200", type: "post" }
       ]
     },
     'Total: 1, Days: 4, Delta: -3'
@@ -238,7 +258,7 @@ describe('status', () => {
 
 describe('command validation', () => {
   it('should handle unknown commands', async () => {
-    await main(TEST_BLOG_URL, 'invalid-command');
+    await main(TEST_API_URL, 'invalid-command');
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
@@ -249,7 +269,7 @@ describe('command validation', () => {
   });
 
   it('should error when no command is provided', async () => {
-    await main(TEST_BLOG_URL, undefined);
+    await main(TEST_API_URL, undefined);
 
     expect(mockConsoleLog).not.toHaveBeenCalled();
     expect(mockConsoleError).toHaveBeenCalledWith(
