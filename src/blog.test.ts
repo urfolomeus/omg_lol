@@ -167,11 +167,12 @@ describe('timeline', () => {
         return HttpResponse.json({
           response: {
             entries: [
-              { entry: "1", title: "Post 1", date: "1734001200", type: "post" },
-              { entry: "2", title: "Post 2", date: "1734001200", type: "post" },
-              { entry: "3", title: "Post 3", date: "1734001200", type: "post" },
-              { entry: "4", title: "Post 4", date: "1734174000", type: "post" },
-              { entry: "5", title: "Post 5", date: "1734260400", type: "post" }
+              { entry: "1", title: "Post 1", date: "1734001200", type: "post" }, // 2024-12-12
+              { entry: "2", title: "Post 2", date: "1734001200", type: "post" }, // 2024-12-12
+              { entry: "3", title: "Post 3", date: "1734001200", type: "post" }, // 2024-12-12
+              { entry: "4", title: "Post 4", date: "1734174000", type: "post" }, // 2024-12-14
+              { entry: "5", title: "Post 5", date: "1734260400", type: "page" }, // 2024-12-15 not a post
+              { entry: "6", title: "Post 6", date: "1734260400", type: "post" }  // 2024-12-15
             ]
           }
         });
@@ -226,9 +227,9 @@ describe('status', () => {
         return HttpResponse.json({
           response: {
             entries: [
-              { entry: "1", title: "Post 1", date: "1734001200", type: "post" },
-              { entry: "2", title: "Post 2", date: "1734001200", type: "post" },
-              { entry: "3", title: "Post 3", date: "1734001200", type: "post" }
+              { entry: "1", title: "Post 1", date: "1734001200", type: "post" }, // 2024-12-12
+              { entry: "2", title: "Post 2", date: "1734001200", type: "page" }, // 2024-12-12 not a post
+              { entry: "3", title: "Post 3", date: "1734001200", type: "post" }  // 2024-12-12
             ]
           }
         });
@@ -237,7 +238,7 @@ describe('status', () => {
 
     await main(TEST_API_URL, 'status');
 
-    expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 3, Days: 4, Delta: -1'));
+    expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 2, Days: 4, Delta: -2'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });

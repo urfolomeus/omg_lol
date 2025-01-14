@@ -34,6 +34,7 @@ function getDaysBetween(start: Date, end: Date): number {
 // Helper function to sort posts by date
 function sortPostsByDate(posts: WeblogEntry[]): WeblogEntry[] {
   return [...posts]
+    .filter(post => post.type === 'post')
     .sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
 }
 
