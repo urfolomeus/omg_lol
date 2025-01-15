@@ -118,6 +118,10 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
   it('should use API_URL environment variable when no URL provided', async () => {
     process.env.API_URL = TEST_API_URL;
 
+    // Set the same mock date as other tests
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-12-16T12:00:00Z'));
+
     server.use(
       http.get(TEST_BLOG_URL, () => {
         return HttpResponse.json({ response: mockResponse });
@@ -138,6 +142,7 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
     expect(mockExit).not.toHaveBeenCalled();
 
     delete process.env.API_URL;
+    vi.useRealTimers();
   });
 
   it('should error when no URL is provided and API_URL is not set', async () => {
@@ -155,7 +160,16 @@ function testUrlHandling(command: string, mockResponse: object, expectedOutput: 
 }
 
 describe('timeline', () => {
-  it('should display timeline of posts with correct counts', async () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-12-16T12:00:00Z')); // Set current date to Dec 16
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should display timeline of posts with correct counts up to current date', async () => {
     server.use(
       http.get(TEST_BLOG_URL, ({ request }) => {
         // Verify the Authorization header
@@ -181,11 +195,12 @@ describe('timeline', () => {
 
     await main(TEST_API_URL, 'timeline');
 
-    expect(mockConsoleLog).toHaveBeenCalledTimes(4);
+    expect(mockConsoleLog).toHaveBeenCalledTimes(5);
     expect(mockConsoleLog).toHaveBeenNthCalledWith(1, outputDecorator('2024-12-12  3'));
     expect(mockConsoleLog).toHaveBeenNthCalledWith(2, outputDecorator('2024-12-13  0', 'error'));
     expect(mockConsoleLog).toHaveBeenNthCalledWith(3, outputDecorator('2024-12-14  1'));
     expect(mockConsoleLog).toHaveBeenNthCalledWith(4, outputDecorator('2024-12-15  1'));
+    expect(mockConsoleLog).toHaveBeenNthCalledWith(5, outputDecorator('2024-12-16  0', 'error'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });
@@ -201,14 +216,20 @@ describe('timeline', () => {
         { entry: "2", title: "Post 2", date: "1734087600", type: "post" }
       ]
     },
-    ['2024-12-12  1', '2024-12-13  1']
+    [
+      '2024-12-12  1',
+      '2024-12-13  1',
+      '2024-12-14  0',
+      '2024-12-15  0',
+      '2024-12-16  0'
+    ].map((line, index) => line.endsWith('0') ? outputDecorator(line, 'error') : outputDecorator(line))
   );
 });
 
 describe('status', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2024-12-15T12:00:00Z'));
+    vi.setSystemTime(new Date('2024-12-16T12:00:00Z')); // Match timeline test date
   });
 
   afterEach(() => {
@@ -238,7 +259,7 @@ describe('status', () => {
 
     await main(TEST_API_URL, 'status');
 
-    expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 2, Days: 4, Delta: -2'));
+    expect(mockConsoleLog).toHaveBeenCalledWith(outputDecorator('Total: 2, Days: 5, Delta: -3'));
     expect(mockConsoleError).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
   });
@@ -253,7 +274,7 @@ describe('status', () => {
         { entry: "1", title: "Post 1", date: "1734001200", type: "post" }
       ]
     },
-    'Total: 1, Days: 4, Delta: -3'
+    'Total: 1, Days: 5, Delta: -4'
   );
 });
 
