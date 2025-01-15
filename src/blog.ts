@@ -73,9 +73,11 @@ function handleTimeline(entries: WeblogEntry[]): void {
     return;
   }
 
-  // Get first and last dates
+  // Get first date and today's date
   const firstDate = getPostDate(posts[0]);
-  const lastDate = getPostDate(posts[posts.length - 1]);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day
+  const todayStr = getDateString(today);
 
   // Create a map of dates to post counts
   const postCounts = new Map<string, number>();
@@ -86,12 +88,13 @@ function handleTimeline(entries: WeblogEntry[]): void {
 
   // Generate timeline
   const currentDate = new Date(firstDate);
-  while (currentDate <= lastDate) {
-    const dateStr = getDateString(currentDate);
-    const count = postCounts.get(dateStr) || 0;
-    const line = `${dateStr}  ${count}`;
+  let currentDateStr = getDateString(currentDate);
+  while (currentDateStr <= todayStr) {
+    const count = postCounts.get(currentDateStr) || 0;
+    const line = `${currentDateStr}  ${count}`;
     console.log(outputDecorator(line, count === 0 ? 'error' : 'normal'));
     currentDate.setDate(currentDate.getDate() + 1);
+    currentDateStr = getDateString(currentDate);
   }
 }
 
