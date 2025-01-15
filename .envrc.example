@@ -1,1 +1,2 @@
-export BLOG_FEED_URL="https://username.weblog.lol/feed.json"
+export API_URL="https://api.omg.lol/address/username"
+export API_TOKEN="YOUR-API-TOKEN"

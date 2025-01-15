@@ -1,28 +1,26 @@
 import fetch from 'node-fetch';
 import { outputDecorator } from './utils/outputDecorator.js';
 
-interface Author {
-  name: string;
-}
-
-interface BlogPost {
-  id: string;
+interface WeblogEntry {
+  entry: string;
+  location: string;
   title: string;
-  content_text: string;
-  date_published: string;
-  author: Author;
+  date: string;
+  type: string;
+  status: string;
+  metadata: string;
 }
 
-interface BlogFeed {
-  version: string;
-  title: string;
-  items: BlogPost[];
+interface WeblogEntries {
+  entries: WeblogEntry[];
 }
-
+interface WeblogResponse {
+  response: WeblogEntries;
+}
 
 // Helper functions for date handling
-function getPostDate(post: BlogPost): Date {
-  return new Date(post.date_published);
+function getPostDate(post: WeblogEntry): Date {
+  return new Date(parseInt(post.date) * 1000);
 }
 
 function getDateString(date: Date): string {
@@ -34,23 +32,32 @@ function getDaysBetween(start: Date, end: Date): number {
 }
 
 // Helper function to sort posts by date
-function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
-  return [...posts].sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
+function sortPostsByDate(posts: WeblogEntry[]): WeblogEntry[] {
+  return [...posts]
+    .filter(post => post.type === 'post')
+    .sort((a, b) => getPostDate(a).getTime() - getPostDate(b).getTime());
 }
 
-async function fetchJSON(url: string): Promise<BlogFeed> {
+async function fetchWeblogEntries(baseUrl: string): Promise<WeblogEntry[]> {
+  const url = `${baseUrl}/weblog/entries`;
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${process.env.API_TOKEN}`,
+      }
+    });
     if (!response.ok) {
       throw new Error(`Server returned ${response.status}`);
     }
 
-    const data = await response.json() as BlogFeed;
-    if (!data.items) {
+    const data = await response.json() as WeblogResponse;
+    const entries = data.response.entries;
+    if (!entries) {
       throw new Error('Invalid response format');
     }
 
-    return data;
+    return entries;
   } catch (error) {
     // Wrap all errors in a consistent format
     const message = error instanceof Error ? error.message : String(error);
@@ -59,8 +66,8 @@ async function fetchJSON(url: string): Promise<BlogFeed> {
 }
 
 // Command handlers
-function handleTimeline(feed: BlogFeed): void {
-  const posts = sortPostsByDate(feed.items);
+function handleTimeline(entries: WeblogEntry[]): void {
+  const posts = sortPostsByDate(entries);
 
   if (posts.length === 0) {
     return;
@@ -88,8 +95,8 @@ function handleTimeline(feed: BlogFeed): void {
   }
 }
 
-function handleStatus(feed: BlogFeed): void {
-  const posts = sortPostsByDate(feed.items);
+function handleStatus(entries: WeblogEntry[]): void {
+  const posts = sortPostsByDate(entries);
 
   if (posts.length === 0) {
     console.log(outputDecorator('Total: 0, Days: 0, Delta: 0'));
@@ -108,8 +115,8 @@ function handleStatus(feed: BlogFeed): void {
 // Main function that runs the program
 export async function main(url?: string, command?: string): Promise<void> {
   try {
-    const feedUrl = url || process.env.BLOG_FEED_URL;
-    if (!feedUrl) {
+    const baseUrl = url || process.env.API_URL;
+    if (!baseUrl) {
       throw new Error('Blog feed URL not provided');
     }
 
@@ -118,13 +125,14 @@ export async function main(url?: string, command?: string): Promise<void> {
       throw new Error('Unknown blog command: ' + command);
     }
 
-    const feed = await fetchJSON(feedUrl);
+    const entries = await fetchWeblogEntries(baseUrl);
+
     switch (command) {
       case 'timeline':
-        handleTimeline(feed);
+        handleTimeline(entries);
         break;
       case 'status':
-        handleStatus(feed);
+        handleStatus(entries);
         break;
     }
   } catch (error: unknown) {

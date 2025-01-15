@@ -75,7 +75,8 @@ To run tests once without watch mode:
 
 ### Environment Variables
 
-- `BLOG_FEED_URL`: URL to your omg.lol blog's JSON feed (required for blog commands)
+- `API_URL`: URL for your omg.lol API
+- `API_TOKEN`: your [omg.lol API token](https://home.omg.lol/account)
 
 ## Project Structure
 
