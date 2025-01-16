@@ -101,6 +101,8 @@ function handleTimeline(entries: WeblogEntry[]): void {
 function handleStatus(entries: WeblogEntry[]): void {
   const posts = sortPostsByDate(entries);
 
+  console.log('Today is ', getDateString(new Date()));
+
   if (posts.length === 0) {
     console.log(outputDecorator('Total: 0, Days: 0, Delta: 0'));
     return;
